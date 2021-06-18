@@ -1,0 +1,25 @@
+{
+    "name": "ev2li/skeleton",
+    "authors": [
+        {
+            "name": "ev2li",
+            "email": "ev2li9748@163.com"
+        }
+    ],
+    "description": "skeleton framework",
+    "keywords": [
+        "php",
+        "swoole",
+        "toone"
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\":"application/",
+            "Toone\\": "framework/Toone"
+        }
+    },
+    "require": {
+        "php": ">=7.0",
+        "ext-swoole" : ">=4.0"
+    }
+}
