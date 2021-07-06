@@ -11,21 +11,21 @@ namespace App\Api\Controller;
 
 /**
  * Class TestContorller
- * @Contoller(prefix="test")
+ * @Controller(prefix="test")
  */
 class TestController
 {
     /**
-     * RequestMapping(route="index")
+     * @RequestMapping(route="index")
      */
     public function index(){
-        echo "控制器方法";
+        return "控制器方法";
     }
 
     /**
-     * RequestMapping(route="test")
+     * @RequestMapping(route="test")
      */
     public function test(){
-
+        return "控制器方法";
     }
 }

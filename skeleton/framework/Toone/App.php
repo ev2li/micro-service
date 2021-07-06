@@ -11,17 +11,19 @@ namespace Toone;
 
 use App\Api\Controller\TestController;
 use Swoole\Http\Server;
+use Toone\Croe\Route\Route;
 
 class App
 {
     public function run(){
         $this->init();
         $this->loadAnnotations();//载入注解
-
         $http = new Server("0.0.0.0", 9501);
         $http->on("request", function ($request, $response) {
-
-            $response->end("<h1>运行应用</h1>");
+            $path_info = $request->server['path_info'];
+            $method = $request->server['request_method'];
+            $ret = Route::dispatch($method, $path_info);
+            $response->end("<h1>$ret</h1>");
         });
         $http->start();
     }
@@ -33,17 +35,51 @@ class App
 
     public function loadAnnotations(){
         $dirs = glob(APP_PATH."/api/controller/*");
-        echo APP_PATH . "/api/controller/*" . PHP_EOL;
+        var_dump($this->tree(APP_PATH));
+//        echo APP_PATH . "/api/controller/*" . PHP_EOL;
         if(!empty($dirs)){
             foreach ($dirs as $file){
                 $obj = new TestController();
                 $refect = new \ReflectionClass($obj);
-//              var_dump($refection->getDocComment());
+                $classDocComment = $refect->getDocComment();
+                //匹配前缀
+                preg_match('/@Controller\((.*)\)/i', $classDocComment, $prefix);
+                $prefix = trim(explode("=", $prefix[1])[1], "\"");
+//                var_dump($prefix); //专门有个解析类
                 foreach ($refect->getMethods() as $method){
-                    var_dump($method->getDocComment());
+                    $methodDocComment = $method->getDocComment();
+                    preg_match('/@RequestMapping\((.*)\)/i', $methodDocComment, $suffix);
+                    $suffix = trim(explode("=", $suffix[1])[1], "\"");
+//                    var_dump($suffix);
+                    $routeInfo = [
+                        'routePath' => "/".$prefix."/".$suffix,
+                        'handle'    =>  $refect->getName()."@".$method->getName()
+                    ];
+//                    var_dump($routeInfo);
+                    Route::addRoute('GET', $routeInfo);
                 }
             }
         }
+    }
+
+    /**
+     * 遍历目录
+     * @param $dir
+     */
+    public function tree($dir){
+        $dirs = glob($dir."/*");
+        $dirFiles = [];
+        foreach ($dirs as $dir){
+            if(is_dir($dir)){
+                $dirFiles[] = $this->tree($dir);
+                if(is_array($dirFiles)){
+
+                }
+            }else{
+                $dirFiles[] = $dir;
+            }
+        }
+        return $dirFiles;
     }
 }
 
