@@ -10,7 +10,7 @@ namespace App\Api\Controller;
 
 
 /**
- * Class TestContorller
+ * Class TestController
  * @Controller(prefix="test")
  */
 class TestController

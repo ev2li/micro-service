@@ -34,30 +34,44 @@ class App
     }
 
     public function loadAnnotations(){
-        $dirs = glob(APP_PATH."/api/controller/*");
-        var_dump($this->tree(APP_PATH));
+//        $dirs = glob(APP_PATH."/api/controller/*");
+        $dirs = $this->tree(APP_PATH, "Controller");
 //        echo APP_PATH . "/api/controller/*" . PHP_EOL;
         if(!empty($dirs)){
             foreach ($dirs as $file){
-                $obj = new TestController();
-                $refect = new \ReflectionClass($obj);
-                $classDocComment = $refect->getDocComment();
-                //匹配前缀
-                preg_match('/@Controller\((.*)\)/i', $classDocComment, $prefix);
-                $prefix = trim(explode("=", $prefix[1])[1], "\"");
+                $fileName = explode('/', $file);
+                $className = explode(".",end($fileName))[0];
+
+                $file = file_get_contents($file, false,null,0,500);
+                preg_match('/namespace\s(.*)/i', $file, $namespace);
+
+                if(isset($namespace[1])){
+                    $namespace = str_replace([" ",';', '"',],'', $namespace[1]);
+                    $className = trim($namespace."\\".$className);
+                    $obj = new $className;
+                    var_dump($obj);
+
+                    $refect = new \ReflectionClass($obj);
+                    $classDocComment = $refect->getDocComment();
+                    //匹配前缀
+                    preg_match('/@Controller\((.*)\)/i', $classDocComment, $prefix);
+//                    $prefix = trim(explode("=", $prefix[1])[1], "\"");
+                    $prefix = str_replace("\"", "",explode("=", $prefix[1])[1]);
 //                var_dump($prefix); //专门有个解析类
-                foreach ($refect->getMethods() as $method){
-                    $methodDocComment = $method->getDocComment();
-                    preg_match('/@RequestMapping\((.*)\)/i', $methodDocComment, $suffix);
-                    $suffix = trim(explode("=", $suffix[1])[1], "\"");
+                    foreach ($refect->getMethods() as $method){
+                        $methodDocComment = $method->getDocComment();
+                        preg_match('/@RequestMapping\((.*)\)/i', $methodDocComment, $suffix);
+                        $suffix = trim(explode("=", $suffix[1])[1], "\"");
 //                    var_dump($suffix);
-                    $routeInfo = [
-                        'routePath' => "/".$prefix."/".$suffix,
-                        'handle'    =>  $refect->getName()."@".$method->getName()
-                    ];
+                        $routeInfo = [
+                            'routePath' => "/".$prefix."/".$suffix,
+                            'handle'    =>  $refect->getName()."@".$method->getName()
+                        ];
 //                    var_dump($routeInfo);
-                    Route::addRoute('GET', $routeInfo);
+                        Route::addRoute('GET', $routeInfo);
+                    }
                 }
+
             }
         }
     }
@@ -65,18 +79,28 @@ class App
     /**
      * 遍历目录
      * @param $dir
+     * @param $filter
+     * @return array
      */
-    public function tree($dir){
+    public function tree($dir, $filter){
         $dirs = glob($dir."/*");
         $dirFiles = [];
         foreach ($dirs as $dir){
             if(is_dir($dir)){
-                $dirFiles[] = $this->tree($dir);
-                if(is_array($dirFiles)){
-
+                $res = $this->tree($dir, $filter);
+                if(is_array($res)){
+                    foreach ($res as $v){
+                        if(stristr($v,$filter)){
+                            $dirFiles[] = $v;
+                        }
+                    }
                 }
             }else{
-                $dirFiles[] = $dir;
+                //判断是否是控制器
+                if(stristr($dir,$filter)){
+                    $dirFiles[] = $dir;
+                }
+
             }
         }
         return $dirFiles;

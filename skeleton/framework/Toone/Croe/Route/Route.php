@@ -26,7 +26,7 @@ class Route
      */
     public static function addRoute($method, $routeInfo){
         self::$route[$method][] = $routeInfo;
-    }
+    } 
 
     /**
      * 路由分发
